@@ -14,6 +14,7 @@
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
 
 
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600;700&display=swap">
@@ -29,8 +30,10 @@
   --display:"Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
   --body:"Figtree", "Segoe UI", system-ui, -apple-system, sans-serif;
   --r:12px;
+  --scrim:rgba(16,32,30,.45);
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --scrim:rgba(0,0,0,.6);
   --bg:#0F1716; --surface:#172120; --ink:#E3ECEA; --muted:#98ABA8; --line:#283533;
   --accent:#5CC0B4; --accent-ink:#0B1A18; --accent-soft:#1A3431;
   --med:#AFA2F0; --med-soft:#26223F;
@@ -39,6 +42,7 @@
   --ok:#72CC96; color-scheme:dark;
 }}
 :root[data-theme="dark"]{
+  --scrim:rgba(0,0,0,.6);
   --bg:#0F1716; --surface:#172120; --ink:#E3ECEA; --muted:#98ABA8; --line:#283533;
   --accent:#5CC0B4; --accent-ink:#0B1A18; --accent-soft:#1A3431;
   --med:#AFA2F0; --med-soft:#26223F;
@@ -196,6 +200,35 @@ ol.steps{margin:8px 0 0;padding-left:1.3em}
 ol.steps li{margin:4px 0}
 .stopbox{border:1px solid var(--danger);background:var(--danger-soft);border-radius:var(--r);padding:14px 16px;margin-top:14px}
 .stopbox strong{color:var(--danger)}
+
+.mealbtn{display:grid;gap:2px;text-align:left;background:none;border:0;padding:6px 8px;margin:-6px -8px;border-radius:10px;cursor:pointer;color:inherit}
+.mealbtn:hover{background:var(--accent-soft)}
+.rlink{color:var(--accent);font-weight:600;font-size:.85rem}
+.rbtn{background:none;border:1px solid var(--line);border-radius:999px;padding:3px 10px;font-size:.8rem;font-weight:600;color:var(--accent);cursor:pointer;margin-top:6px}
+.prepbtn{display:flex;justify-content:space-between;align-items:center;gap:12px;width:100%;text-align:left;background:var(--accent-soft);border:1px solid var(--accent);border-radius:var(--r);padding:14px 16px;cursor:pointer;color:var(--ink);margin-top:6px}
+.prepbtn b{font-family:var(--display);font-size:1.05rem}
+.sheet{position:fixed;inset:0;z-index:20;background:var(--scrim);display:grid;place-items:end center;padding:16px;padding-top:calc(16px + env(safe-area-inset-top,0px))}
+@media (min-width:700px){.sheet{place-items:center}}
+.rcard{background:var(--surface);color:var(--ink);border-radius:16px;width:100%;max-width:660px;max-height:100%;overflow:auto;padding:20px;padding-bottom:calc(20px + env(safe-area-inset-bottom,0px));box-shadow:0 10px 40px rgba(0,0,0,.25)}
+.rhead{display:flex;justify-content:space-between;align-items:start;gap:12px}
+.rcard h2{margin:4px 0 10px;font-size:1.45rem}
+.rmeta{display:flex;flex-wrap:wrap;gap:6px 18px;font-size:.88rem;color:var(--muted);padding-bottom:12px;border-bottom:1px solid var(--line)}
+.rmeta b{color:var(--ink);font-variant-numeric:tabular-nums}
+.chain{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.chain span{font-size:.8rem;padding:4px 10px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-weight:600}
+.chain span.mk{background:var(--med-soft);color:var(--med)}
+.rgrid{display:grid;gap:4px 28px}
+@media (min-width:600px){.rgrid{grid-template-columns:minmax(0,5fr) minmax(0,7fr)}}
+.rgrid h3{margin:18px 0 6px;font-size:1rem}
+ul.ing{list-style:none;padding:0;margin:0}
+ul.ing li{padding:7px 0;border-bottom:1px dotted var(--line);font-size:.95rem}
+ol.rsteps{margin:0;padding-left:1.3em}
+ol.rsteps li{margin:0 0 10px;padding-left:4px}
+.rtip{margin-top:14px;padding:12px 14px;border-radius:10px;background:var(--bg);font-size:.92rem}
+.rtip b{color:var(--accent)}
+.rnav{display:flex;justify-content:space-between;gap:10px;margin-top:16px;padding-top:12px;border-top:1px solid var(--line)}
+.closex{background:none;border:1px solid var(--line);border-radius:999px;width:36px;height:36px;cursor:pointer;font-size:1.2rem;flex:none;color:var(--ink)}
+body.lock{overflow:hidden}
 .foot{color:var(--muted);font-size:.82rem;margin-top:28px}
 @media (prefers-reduced-motion: no-preference){.chk,.chip span,nav.tabs button{transition:background .15s,color .15s,border-color .15s}}
 </style>
@@ -234,6 +267,7 @@ ol.steps li{margin:4px 0}
     <button role="tab" data-tab="history" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M5 19V11M10 19V6M15 19v-5M20 19V9"/></svg>History</button>
   </div>
 </nav>
+<div id="sheet" class="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="rTitle"></div>
 
 <script>
 (function(){
@@ -251,10 +285,10 @@ const MENU=[
 const SNACKS=["Banana, pear, or melon","Plain crackers or rice cakes","Plain low-fat yogurt, if tolerated","A hard-boiled egg"];
 const SHOP=[
  {cat:"Produce",items:["Bananas, 5–7","One small melon or a container of cut melon","Pears, 3–4","Potatoes or sweet potatoes, 4–5","Carrots, 1 bag","Green beans, fresh or frozen","Zucchini, 2–3","Spinach, fresh or frozen"]},
- {cat:"Protein",note:"Choose plain products so he can control the seasoning.",items:["Skinless chicken breasts or tenderloins, about 2 pounds","Fish fillets, such as cod, tilapia, or salmon, about 1 pound","Lean ground turkey, 1 pound","Eggs, 1 dozen","Optional: plain tofu or canned beans, if tolerated"]},
+ {cat:"Protein",note:"Choose plain products so he can control the seasoning.",items:["Skinless chicken breasts or tenderloins, about 2½ pounds","Fish fillets, such as cod, tilapia, or salmon, about 1 pound","Lean ground turkey, 1 pound","Eggs, 1 dozen","Optional: plain tofu or canned beans, if tolerated"]},
  {cat:"Grains and starches",items:["Plain oatmeal","Brown or white rice","Whole-grain bread","Plain pasta","Plain crackers","Optional: plain rice cakes"]},
  {cat:"Dairy or alternatives",note:"He does not need to eliminate dairy unless it triggers symptoms.",items:["Low-fat milk or an unsweetened milk alternative","Plain low-fat yogurt, if tolerated"]},
- {cat:"Seasonings and cooking basics",items:["Olive oil, used lightly","Salt","Dried parsley","Dried thyme","Dried rosemary","Dried basil or oregano","Dill","Cinnamon","Low-sodium broth without hot peppers or tomato","Optional: fresh ginger, to try in small amounts"]},
+ {cat:"Seasonings and cooking basics",items:["Olive oil, used lightly","Salt","Dried parsley","Dried thyme","Dried rosemary","Dried basil or oregano","Dill","Cinnamon","Low-sodium broth without hot peppers or tomato, about 6 cups","Optional: fresh ginger, to try in small amounts"]},
  {cat:"Drinks",items:["Water, tap or bottled","Optional: caffeine-free, nonmint tea"]},
  {cat:"For work days",items:["Lunch containers for packed leftovers","Pill case for the work-day sucralfate dose","Water bottle"]}
 ];
@@ -275,6 +309,114 @@ const DEFAULT_MEDS=[
  {id:"suc2",name:"Sucralfate",dose:"1 g",time:"17:00",on:true,kind:"suc",note:"Dose 2 of 2. One hour before dinner, after exercise."},
  {id:"famo",name:"Famotidine",dose:"20 mg",time:"21:00",on:true,kind:"h2",note:"Once daily. Prescription famotidine is usually taken at bedtime; follow the time on his label. Take with a full glass of water."}
 ];
+
+// Recipe cards, in MENU order: [day][breakfast, lunch, dinner]
+const OATS_BASE=["½ cup old-fashioned rolled oats","1 cup low-fat milk, unsweetened milk alternative, or water","Pinch of salt"];
+const RECIPES=[
+ // Monday
+ [{title:"Banana-Cinnamon Oatmeal",prep:"2 min",cook:"5 min",serves:"1",
+   ing:OATS_BASE.concat(["½ ripe banana, sliced","⅛ teaspoon cinnamon"]),
+   steps:["Stir the oats, milk, and salt together in a small pot.","Bring to a gentle simmer over medium heat. Cook 4–5 minutes, stirring often, until creamy.","Stir in half the banana slices so they soften.","Top with the rest of the banana and the cinnamon."],
+   tip:"Microwave option: use a large bowl and cook 2–2½ minutes, stirring halfway. A ripe banana adds sweetness, so he can skip sugar and butter."},
+  {title:"Herb-Baked Chicken, Rice, and Carrots",prep:"5 min",cook:"Reheat 2–3 min",serves:"1",uses:"Sunday batch chicken and rice",
+   ing:["4 oz Herb-Baked Chicken from the Sunday batch, sliced","¾ cup cooked rice from the Sunday batch","¾ cup steamed carrot coins from the Sunday batch","1 tablespoon low-sodium broth or water"],
+   steps:["Sunday night: pack the chicken, rice, and carrots into one container. Spoon the broth over the rice so it stays moist.","Refrigerate overnight and carry it to work in an insulated bag with an ice pack.","At work, microwave covered for 2–3 minutes, stirring once, until steaming hot all the way through."],
+   tip:"Reheated leftovers should reach 165 °F. If it’s hot at the edges and cool in the middle, stir and heat 30 seconds more."},
+  {title:"Baked Dill Fish with Potato and Green Beans",prep:"10 min",cook:"30 min",serves:"1",
+   ing:["5–6 oz cod or tilapia fillet","1 medium potato, cut into 1-inch cubes","1 cup green beans, trimmed (fresh or frozen)","2 teaspoons olive oil, divided","½ teaspoon dried dill","¼ teaspoon salt, divided"],
+   steps:["Heat the oven to 400 °F. Line a sheet pan with foil or parchment.","Toss the potato with 1 teaspoon oil and a pinch of salt. Roast 15 minutes.","Push the potatoes to one side. Add the fish and green beans. Brush the fish with the remaining oil and sprinkle with dill and salt.","Roast 12–15 minutes more, until the fish flakes easily with a fork and reaches 145 °F and the potatoes are tender."],
+   tip:"Skip the lemon wedge; citrus is a common trigger. Extra dill or a pinch of parsley gives the same fresh finish."}],
+ // Tuesday
+ [{title:"Spinach Scrambled Eggs with Toast",prep:"3 min",cook:"5 min",serves:"1",
+   ing:["2 eggs","1 cup fresh spinach, or ¼ cup thawed frozen spinach squeezed dry","1 teaspoon olive oil","Pinch of salt","1 slice whole-grain bread"],
+   steps:["Start the toast.","Warm the oil in a nonstick pan over medium-low heat. Add the spinach and stir about 1 minute, until wilted.","Beat the eggs with the salt and pour them over the spinach.","Stir gently with a spatula for 2–3 minutes, until just set and no longer runny."],
+   tip:"Low heat and a teaspoon of oil keep this light. If whole eggs sit heavy, use 1 egg plus 2 egg whites."},
+  {title:"Chicken and Rice with Zucchini",prep:"10 min (night before)",cook:"Reheat 2–3 min",serves:"1",uses:"Sunday batch chicken and rice",
+   ing:["4 oz Herb-Baked Chicken, sliced","¾ cup cooked rice","1 small zucchini, cut into half-moons","1 teaspoon olive oil","Pinch of salt and dried parsley","1 tablespoon low-sodium broth or water"],
+   steps:["Monday night: warm the oil in a pan over medium heat and cook the zucchini 4–5 minutes, until tender. Season with salt and parsley.","Pack the chicken, rice, and zucchini together. Spoon the broth over the rice.","At work, microwave covered for 2–3 minutes, stirring once, until steaming hot."],
+   tip:"Use the chicken by Wednesday. Cooked chicken keeps 3–4 days in the refrigerator."},
+  {title:"Herbed Turkey Patties with Sweet Potato and Carrots",prep:"10 min",cook:"20 min",serves:"1, plus 1 patty for Friday",makes:"Friday’s lunch patty",
+   ing:["8 oz lean ground turkey","2 tablespoons rolled oats","1 tablespoon low-fat milk","½ teaspoon dried parsley","¼ teaspoon dried thyme","¼ teaspoon salt","1 teaspoon olive oil","1 medium sweet potato","1 cup carrot coins"],
+   steps:["Prick the sweet potato with a fork and microwave 5–7 minutes, turning once, until soft.","Mix the turkey, oats, milk, parsley, thyme, and salt with clean hands. Shape into 2 patties about ½ inch thick.","Warm the oil in a nonstick pan over medium heat. Cook the patties 5–6 minutes per side, until 165 °F in the center.","Meanwhile, simmer the carrots in a little water for 8–10 minutes, until tender.","Serve one patty. Cool the second and refrigerate it for Friday."],
+   tip:"No onion or garlic in the mix; both are common reflux triggers. The oats keep lean turkey juicy without extra fat."}],
+ // Wednesday
+ [{title:"Banana Yogurt Bowl",prep:"3 min",cook:"None",serves:"1",
+   ing:["¾ cup plain low-fat yogurt","½ banana, sliced","¼ cup rolled oats","Pinch of cinnamon"],
+   steps:["Spoon the yogurt into a bowl or jar.","Top with the banana, oats, and cinnamon."],
+   tip:"Assemble it the night before for a faster 6:15 breakfast; the oats soften overnight. If yogurt bothers him, make the Monday oatmeal instead."},
+  {title:"Chicken and Rice Soup with Spinach",prep:"10 min",cook:"30 min (Tuesday night)",serves:"3",uses:"Sunday batch chicken",makes:"Thursday’s lunch and a frozen portion for Sunday dinner",
+   ing:["4 cups low-sodium chicken broth (no tomato or hot pepper)","1 cup water","2 carrots, diced","⅓ cup uncooked white rice","8 oz Herb-Baked Chicken, diced","2 cups fresh spinach, or ½ cup frozen","½ teaspoon dried thyme","½ teaspoon dried parsley","Pinch of dill (optional)","Salt to taste","1 thin slice fresh ginger (optional)"],
+   steps:["Bring the broth, water, carrots, thyme, and ginger (if using) to a boil in a large pot.","Stir in the rice. Lower the heat and simmer, partly covered, for 15–18 minutes, until the rice and carrots are tender.","Add the chicken and simmer 5 minutes, until hot.","Stir in the spinach and cook 1 minute. Remove the ginger. Season with parsley, dill, and salt.","Cool, then divide into 3 containers: one for Wednesday, one for Thursday, and one for the freezer."],
+   tip:"Rice keeps soaking up broth, so add a splash of water when reheating. At work, heat until steaming throughout."}],
+ // Thursday
+ [{title:"Pear Oatmeal",prep:"3 min",cook:"6 min",serves:"1",
+   ing:OATS_BASE.concat(["½ ripe pear, chopped","⅛ teaspoon cinnamon"]),
+   steps:["Stir the oats, milk, salt, and pear together in a small pot.","Simmer over medium heat for 5–6 minutes, stirring often, until the oats are creamy and the pear is soft.","Sprinkle with cinnamon."],
+   tip:"Cooking the pear with the oats makes it softer and easier on the stomach than raw pear."},
+  {title:"Chicken Soup and Toast",prep:"2 min",cook:"Reheat 3 min",serves:"1",uses:"Wednesday’s soup",
+   ing:["1 container Chicken and Rice Soup","1 slice whole-grain bread or toast","Splash of water"],
+   steps:["Pack the soup and the bread separately.","At work, add a splash of water and microwave covered for about 3 minutes, stirring halfway, until steaming throughout."],
+   tip:"For a thermos instead: fill it with boiling water for 5 minutes, pour that out, then add soup heated until piping hot."},
+  {title:"Basil Baked Fish with Rice and Zucchini",prep:"10 min",cook:"15 min",serves:"1",
+   ing:["5–6 oz cod, tilapia, or salmon fillet","1 small zucchini, cut into half-moons","2 teaspoons olive oil, divided","½ teaspoon dried basil","¼ teaspoon salt, divided","¾ cup cooked rice (from frozen, or ¼ cup uncooked)"],
+   steps:["Heat the oven to 400 °F. Line a sheet pan.","Toss the zucchini with 1 teaspoon oil and a pinch of salt. Spread on the pan.","Place the fish beside it. Brush with the remaining oil and sprinkle with basil and salt.","Bake 12–15 minutes, until the fish flakes easily and reaches 145 °F.","Reheat frozen rice in the microwave with a spoonful of water, or cook fresh rice while the fish bakes."],
+   tip:"Cod and tilapia are leaner and usually gentler than salmon. Use salmon only if it agrees with him."}],
+ // Friday
+ [{title:"Egg, Toast, and Melon",prep:"2 min",cook:"None (eggs made ahead)",serves:"1",uses:"Sunday hard-boiled eggs",
+   ing:["1–2 hard-boiled eggs from the Sunday batch","1 slice whole-grain toast","1 cup cantaloupe or honeydew cubes"],
+   steps:["Peel the eggs and toast the bread.","Serve with the melon."],
+   tip:"Melon is one of the milder fruits. If he wants a hot egg, use the Tuesday scramble method without the spinach."},
+  {title:"Turkey Patty Sandwich with Carrots",prep:"5 min",cook:"Reheat 1–2 min",serves:"1",uses:"Tuesday’s extra turkey patty",
+   ing:["1 Herbed Turkey Patty from Tuesday","2 slices whole-grain bread","A few spinach leaves","1 tablespoon plain low-fat yogurt mixed with a pinch of dill (optional spread)","1 cup carrot sticks, steamed until tender-crisp"],
+   steps:["Thursday night: pack the patty, bread, spinach, and spread separately so the bread stays dry.","At work, microwave the patty 1–2 minutes until hot in the center.","Assemble the sandwich with the spinach and dill spread. Eat the carrots on the side."],
+   tip:"Skip ketchup, mustard, and raw onion. The dill-yogurt spread adds moisture without acid."},
+  {title:"Herb-Baked Chicken with Sweet Potato and Spinach",prep:"10 min",cook:"25 min",serves:"1, plus 1 portion for Saturday",makes:"Saturday’s chicken bowl",
+   ing:["2 small chicken breasts or 4 tenderloins (10–12 oz)","1 medium sweet potato, cut into 1-inch cubes","1 tablespoon olive oil, divided","½ teaspoon dried thyme","½ teaspoon dried parsley","¼ teaspoon salt","2 cups fresh spinach"],
+   steps:["Heat the oven to 400 °F. Line a sheet pan.","Toss the sweet potato with 1 teaspoon oil and a pinch of salt. Roast 10 minutes.","Add the chicken. Rub with 1 teaspoon oil, thyme, parsley, and salt. Roast 18–22 minutes, until the chicken reaches 165 °F.","Warm the last teaspoon of oil in a pan and wilt the spinach for 1–2 minutes.","Serve one portion. Refrigerate the second within 2 hours for Saturday."],
+   tip:"Tenderloins cook faster, about 12–15 minutes. Check with a thermometer instead of cutting into the meat."}],
+ // Saturday
+ [{title:"Pear Yogurt Bowl",prep:"3 min",cook:"None",serves:"1",
+   ing:["¾ cup plain low-fat yogurt","½ ripe pear, diced","¼ cup rolled oats","Pinch of cinnamon"],
+   steps:["Spoon the yogurt into a bowl.","Top with the pear, oats, and cinnamon."],
+   tip:"If yogurt doesn’t agree with him, make the Thursday pear oatmeal instead."},
+  {title:"Chicken and Rice Bowl with Green Beans",prep:"10 min",cook:"8 min",serves:"1",uses:"Friday’s extra chicken",
+   ing:["4–6 oz chicken from Friday dinner, sliced","¾ cup cooked rice","1 cup green beans","1 teaspoon olive oil","Pinch of salt","¼ teaspoon dried dill or parsley"],
+   steps:["Steam or simmer the green beans for 5–7 minutes, until tender.","Reheat the chicken and rice together, covered, until steaming.","Top with the green beans, drizzle with oil, and season with salt and herbs."],
+   tip:"A spoonful of warm low-sodium broth over the bowl makes a mild sauce."},
+  {title:"Turkey Meatballs with Pasta and Zucchini",prep:"15 min",cook:"20 min",serves:"1, plus meatballs for Sunday",makes:"Sunday’s lunch meatballs",
+   ing:["8 oz lean ground turkey","3 tablespoons rolled oats","2 tablespoons low-fat milk","½ teaspoon dried basil or oregano","¼ teaspoon dried parsley","¼ teaspoon salt","2 oz dry pasta","1 small zucchini, diced","½ cup low-sodium broth","2 teaspoons olive oil, divided"],
+   steps:["Heat the oven to 400 °F. Line a sheet pan.","Mix the turkey, oats, milk, basil, parsley, and salt. Roll into about 10 meatballs.","Bake 15–18 minutes, until 165 °F in the center.","Meanwhile, cook the pasta according to the package. Drain.","Warm 1 teaspoon oil in a pan and cook the zucchini 4–5 minutes. Add the broth, the rest of the oil, and the pasta. Toss until coated.","Serve half the meatballs over the pasta. Refrigerate the rest for Sunday."],
+   tip:"The broth and olive oil sauce stands in for tomato sauce, which is a common trigger."}],
+ // Sunday
+ [{title:"Scrambled Eggs, Toast, and Banana",prep:"2 min",cook:"4 min",serves:"1",
+   ing:["2 eggs","1 teaspoon olive oil","Pinch of salt and dried parsley","1 slice whole-grain toast","1 banana"],
+   steps:["Start the toast.","Warm the oil in a nonstick pan over medium-low heat.","Beat the eggs with the salt and pour in. Stir gently 2–3 minutes, until just set.","Sprinkle with parsley and serve with the toast and banana."],
+   tip:"While the pan is out, hard-boil a batch of eggs for the week; see the weekly prep card."},
+  {title:"Turkey Meatballs with Rice and Carrots",prep:"5 min",cook:"10 min",serves:"1",uses:"Saturday’s extra meatballs",
+   ing:["5 Turkey Meatballs from Saturday","¾ cup cooked rice","1 cup carrot coins","2 tablespoons low-sodium broth"],
+   steps:["Simmer the carrots in a little water for 8–10 minutes, until tender.","Warm the meatballs and rice in a covered pan with the broth over low heat, or microwave 2 minutes, until 165 °F."],
+   tip:"This is a good moment to start the weekly prep, since he’s already cooking rice."},
+  {title:"Chicken Vegetable Soup with Bread",prep:"Thaw overnight",cook:"Reheat 8 min",serves:"1",uses:"The frozen soup portion from Wednesday",
+   ing:["1 frozen portion Chicken and Rice Soup","1 cup fresh spinach or diced zucchini","¼ cup water","1 slice whole-grain bread"],
+   steps:["Saturday night: move the soup from the freezer to the refrigerator.","Warm it in a pot with the water over medium heat until simmering, about 6–8 minutes.","Stir in the spinach or zucchini and cook 2 minutes.","Serve with the bread."],
+   tip:"If there’s no frozen portion, make the Wednesday soup recipe; it takes about 30 minutes."}]
+];
+// Wednesday dinner
+RECIPES[2][2]={title:"Rosemary Chicken with Pasta and Green Beans",prep:"10 min",cook:"22 min",serves:"1",
+  ing:["1 chicken breast (about 6 oz)","½ teaspoon dried rosemary, crushed between your fingers","¼ teaspoon salt, divided","2 teaspoons olive oil, divided","2 oz dry pasta","1 cup green beans, trimmed","½ teaspoon dried parsley"],
+  steps:["Heat the oven to 400 °F. Rub the chicken with 1 teaspoon oil, the rosemary, and a pinch of salt. Bake 18–22 minutes, until 165 °F.","Meanwhile, boil the pasta in salted water. Add the green beans for the last 5 minutes.","Drain. Toss the pasta and beans with the remaining oil and the parsley.","Slice the chicken and serve over the pasta."],
+  tip:"Crushing the rosemary releases its flavor, so he won’t miss garlic."};
+const PREP={title:"Weekly Prep",when:"Sunday evening, about 1 hour",
+  steps:[
+   {h:"Bake the chicken",d:"Heat the oven to 400 °F. Rub about 1¼ lb chicken breasts or tenderloins with 1 tablespoon olive oil, 1 teaspoon dried thyme, 1 teaspoon dried parsley, and ½ teaspoon salt. Bake 20–25 minutes (tenderloins 12–15), until 165 °F. This covers Monday and Tuesday lunch and Wednesday’s soup."},
+   {h:"Cook a pot of rice",d:"Cook 1½ cups uncooked rice according to the package (about 4½ cups cooked). Keep three ¾-cup portions in the refrigerator for Monday and Tuesday. Freeze the rest in ¾-cup bags for Thursday and Saturday."},
+   {h:"Steam carrots",d:"Slice 4 carrots into coins and steam or simmer 8–10 minutes, until tender. Refrigerate for Monday’s lunch and quick sides."},
+   {h:"Hard-boil eggs",d:"Cover 4 eggs with cold water, bring to a boil, then cover, turn off the heat, and let stand 10–12 minutes. Cool in ice water. Use for Friday breakfast and afternoon snacks."},
+   {h:"Pack Monday’s lunch",d:"Chicken, rice, and carrots in one container, with a spoonful of broth over the rice."},
+   {h:"Cool and store safely",d:"Refrigerate cooked food within 2 hours. Use refrigerated leftovers within 3–4 days, and freeze anything meant for later in the week."}
+  ],
+  later:[["Tuesday night","Make the chicken and rice soup; pack Wednesday’s lunch."],["Thursday night","Pack Friday’s turkey sandwich."],["Saturday night","Move the frozen soup to the refrigerator for Sunday dinner."]]
+};
 
 // ---------- Storage ----------
 const KEY="gerd-tracker-v2",OLDKEY="gerd-tracker-v1";
@@ -405,7 +547,7 @@ function renderToday(){
   h+='<div class="kitchen"><span>'+kitchen+'</span><span>Bedtime '+fmt(toMin(s.bed))+'</span></div><ol class="tl">';
   sched.forEach(i=>{
     const done=day.done[i.id];
-    h+='<li class="ti '+i.kind+(done?' done':'')+'"><span class="tt">'+fmt(i.t)+'</span><div class="tb"><div class="tlabel">'+esc(i.label)+' '+TAGS[i.kind]+'</div><div class="tdet">'+esc(i.det)+'</div>'+(done?'<div class="donetime">Checked at '+fmt(toMin(done))+'</div>':'')+'</div>';
+    h+='<li class="ti '+i.kind+(done?' done':'')+'"><span class="tt">'+fmt(i.t)+'</span><div class="tb"><div class="tlabel">'+esc(i.label)+' '+TAGS[i.kind]+'</div><div class="tdet">'+esc(i.det)+'</div>'+(i.kind==="meal"?'<button class="rbtn" data-recipe="'+((viewDate.getDay()+6)%7)+'-'+({b:0,l:1,d:2})[i.id]+'">Recipe: '+esc(RECIPES[(viewDate.getDay()+6)%7][({b:0,l:1,d:2})[i.id]].title)+'</button>':'')+(done?'<div class="donetime">Checked at '+fmt(toMin(done))+'</div>':'')+'</div>';
     h+=checkable(i)?'<button class="chk" data-check="'+i.id+'" aria-pressed="'+(done?"true":"false")+'" aria-label="Mark '+esc(i.label)+' done">✓</button>':'<span></span>';
     h+='</li>';
   });
@@ -440,14 +582,38 @@ function chip(id,txt){return '<label class="chip"><input type="checkbox" id="'+i
 // ---------- Menu ----------
 function renderMenu(){
   const ti=(new Date().getDay()+6)%7;
-  let h='<h2>Weekly menu</h2><p class="lede">Modest portions, lean protein, and mild seasonings. On work days, lunch is packed leftovers. Adjust foods based on what he tolerates; no menu prevents reflux for everyone.</p><div class="days">';
-  MENU.forEach((m,i)=>{h+='<div class="day'+(i===ti?' today':'')+'"><p class="dname">'+m.day+'</p><div class="meals">'+meal("Breakfast",m.b)+meal("Lunch",m.l)+meal("Dinner",m.d)+'</div></div>'});
+  let h='<h2>Weekly menu</h2><p class="lede">Modest portions, lean protein, and mild seasonings. On work days, lunch is packed leftovers. Tap any meal for its recipe card. Adjust foods based on what he tolerates; no menu prevents reflux for everyone.</p>';
+  h+='<button class="prepbtn" data-prep="1"><span><span class="eyebrow">Start here</span><br><b>Weekly prep</b> · Sunday evening, about 1 hour</span><span class="rlink">Open →</span></button><div class="days">';
+  MENU.forEach((m,i)=>{h+='<div class="day'+(i===ti?' today':'')+'"><p class="dname">'+m.day+'</p><div class="meals">'+meal(i,0,m.b)+meal(i,1,m.l)+meal(i,2,m.d)+'</div></div>'});
   h+='</div><h3>Snacks</h3><p class="small">One small snack mid-afternoon, at least an hour before exercise and not near bedtime. Skip morning snacks on work days so the sucralfate dose stays on an empty stomach.</p><ul class="plain">'+SNACKS.map(x=>'<li>'+esc(x)+'</li>').join("")+'</ul>';
-  h+='<h3>Make the week easier</h3><p>Bake several chicken portions, cook a pot of rice, and make soup at the beginning of the week. Pack the next day’s lunch at dinner. Refrigerate leftovers promptly, use them within 3–4 days, and freeze portions intended for later.</p>';
+  h+='<h3>Make the week easier</h3><p>Follow the weekly prep card on Sunday evening, make soup Tuesday night, and pack the next day’s lunch at dinner. Refrigerate leftovers promptly, use them within 3–4 days, and freeze portions intended for later.</p>';
   h+='<h3>How he eats matters, too</h3><p>Keep meals comfortably sized, stay upright afterward, and finish eating at least three hours before lying down or bedtime. Use mild herbs and a little oil; leave off hot sauce, tomato sauce, citrus dressings, and other foods that trigger his symptoms.</p>';
   h+=footer();$("#tab-menu").innerHTML=h;
 }
-function meal(k,v){return '<div class="meal"><span class="eyebrow">'+k+'</span>'+esc(v)+'</div>'}
+const MEALN=["Breakfast","Lunch","Dinner"];
+function meal(di,mi,v){return '<button class="mealbtn" data-recipe="'+di+'-'+mi+'"><span class="eyebrow">'+MEALN[mi]+'</span><span>'+esc(v)+'</span><span class="rlink">'+esc(RECIPES[di][mi].title)+' →</span></button>'}
+
+// ---------- Recipe cards ----------
+let opener=null;
+function openSheet(html){const sh=$("#sheet");sh.innerHTML=html;sh.hidden=false;document.body.classList.add("lock");const c=sh.querySelector(".closex");if(c)c.focus();sh.querySelector(".rcard").scrollTop=0}
+function closeSheet(){const sh=$("#sheet");sh.hidden=true;sh.innerHTML="";document.body.classList.remove("lock");if(opener&&document.body.contains(opener))opener.focus();opener=null}
+function openRecipe(di,mi){
+  const r=RECIPES[di][mi],k=di*3+mi,prev=(k+20)%21,next=(k+1)%21;
+  let h='<div class="rcard"><div class="rhead"><span class="eyebrow">'+MENU[di].day+' · '+MEALN[mi]+'</span><button class="closex" data-close="1" aria-label="Close recipe">×</button></div>';
+  h+='<h2 id="rTitle">'+esc(r.title)+'</h2><div class="rmeta"><span>Prep <b>'+esc(r.prep)+'</b></span><span>Cook <b>'+esc(r.cook)+'</b></span><span>Serves <b>'+esc(r.serves)+'</b></span></div>';
+  if(r.uses||r.makes)h+='<div class="chain">'+(r.uses?'<span>Uses: '+esc(r.uses)+'</span>':'')+(r.makes?'<span class="mk">Makes extra for: '+esc(r.makes)+'</span>':'')+'</div>';
+  h+='<div class="rgrid"><div><h3>Ingredients</h3><ul class="ing">'+r.ing.map(x=>'<li>'+esc(x)+'</li>').join("")+'</ul></div><div><h3>Steps</h3><ol class="rsteps">'+r.steps.map(x=>'<li>'+esc(x)+'</li>').join("")+'</ol></div></div>';
+  h+='<div class="rtip"><b>Reflux note.</b> '+esc(r.tip)+'</div>';
+  h+='<div class="rnav"><button class="btn quiet" data-recipe="'+Math.floor(prev/3)+'-'+(prev%3)+'">← '+esc(RECIPES[Math.floor(prev/3)][prev%3].title)+'</button><button class="btn quiet" data-recipe="'+Math.floor(next/3)+'-'+(next%3)+'">'+esc(RECIPES[Math.floor(next/3)][next%3].title)+' →</button></div></div>';
+  openSheet(h);
+}
+function openPrep(){
+  let h='<div class="rcard"><div class="rhead"><span class="eyebrow">'+esc(PREP.when)+'</span><button class="closex" data-close="1" aria-label="Close prep card">×</button></div><h2 id="rTitle">'+PREP.title+'</h2>';
+  h+='<p class="small" style="margin:0 0 6px">Do these in order so the oven, stove, and fridge work together. Everything here feeds Monday through Wednesday.</p><ol class="rsteps">'+PREP.steps.map(x=>'<li><strong>'+esc(x.h)+'.</strong> '+esc(x.d)+'</li>').join("")+'</ol>';
+  h+='<h3>Later in the week</h3><div class="tablewrap"><table><tbody>'+PREP.later.map(x=>'<tr><td class="t">'+esc(x[0])+'</td><td>'+esc(x[1])+'</td></tr>').join("")+'</tbody></table></div>';
+  h+='<div class="rtip"><b>Food safety.</b> Chicken and ground turkey are done at 165 °F and fish at 145 °F. An instant-read thermometer is the easiest way to check.</div></div>';
+  openSheet(h);
+}
 
 // ---------- Shopping ----------
 function renderShop(){
@@ -568,7 +734,11 @@ function footer(){return '<p class="foot">This plan supports reflux management a
 // ---------- Events ----------
 function sucNear(t){const m=toMin(t);return S.settings.meds.some(x=>x.on&&x.kind==="suc"&&Math.abs(toMin(x.time)-m)<30)}
 document.addEventListener("click",e=>{
+  if(e.target.id==="sheet"){closeSheet();return}
   const t=e.target.closest("button");if(!t)return;
+  if(t.dataset.close){closeSheet();return}
+  if(t.dataset.recipe){if($("#sheet").hidden)opener=t;const p=t.dataset.recipe.split("-").map(Number);openRecipe(p[0],p[1]);return}
+  if(t.dataset.prep){opener=t;openPrep();return}
   if(t.dataset.tab){setTab(t.dataset.tab);return}
   if(t.id==="prevDay"){viewDate=new Date(viewDate.getFullYear(),viewDate.getMonth(),viewDate.getDate()-1);render();return}
   if(t.id==="nextDay"){viewDate=new Date(viewDate.getFullYear(),viewDate.getMonth(),viewDate.getDate()+1);render();return}
@@ -601,6 +771,7 @@ document.addEventListener("change",e=>{
   if(t.dataset.num){const n=parseInt(t.value,10);if(n>=0&&n<240){s[t.dataset.num]=n;save()}keepScroll(render);return}
   if(t.id==="ms-antacid"||t.id==="ms-snackOn"||t.id==="ms-walkOn"){s[t.id.slice(3)]=t.checked;save();keepScroll(render);return}
 });
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("#sheet").hidden)closeSheet()});
 function keepScroll(fn){const y=window.scrollY;fn();window.scrollTo(0,y)}
 setInterval(()=>{if(tab==="today"&&!(document.activeElement&&document.activeElement.closest&&document.activeElement.closest("form")))renderToday()},60000);
 
