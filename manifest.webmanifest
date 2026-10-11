@@ -1,0 +1,15 @@
+{
+  "name": "GERD Plan Tracker",
+  "short_name": "GERD Plan",
+  "description": "Weekly GERD menu, shopping list, medication timing, and symptom tracker.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#F2F5F4",
+  "theme_color": "#1D6B66",
+  "icons": [
+    {"src": "icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png"},
+    {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}

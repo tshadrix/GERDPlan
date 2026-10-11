@@ -1,0 +1,615 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GERD Plan Tracker</title>
+<meta name="theme-color" content="#1D6B66">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="GERD Plan">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: single column phone-first app, sticky header, fixed bottom tab bar; cards only for the "next up" item and alerts */
+:root{
+  --bg:#F2F5F4; --surface:#FFFFFF; --ink:#18272A; --muted:#566866; --line:#D9E2E0;
+  --accent:#1D6B66; --accent-ink:#FFFFFF; --accent-soft:#DCEEEB;
+  --med:#5B4BA8; --med-soft:#E9E6F7;
+  --warn:#9A4A12; --warn-soft:#FBEADB;
+  --danger:#B3261E; --danger-soft:#FBE3E1;
+  --ok:#2C7A4B;
+  --display:"Bricolage Grotesque", "Avenir Next", "Segoe UI", system-ui, sans-serif;
+  --body:"Figtree", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --r:12px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F1716; --surface:#172120; --ink:#E3ECEA; --muted:#98ABA8; --line:#283533;
+  --accent:#5CC0B4; --accent-ink:#0B1A18; --accent-soft:#1A3431;
+  --med:#AFA2F0; --med-soft:#26223F;
+  --warn:#EBA06A; --warn-soft:#3A2617;
+  --danger:#F28A82; --danger-soft:#3D1D1B;
+  --ok:#72CC96; color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --bg:#0F1716; --surface:#172120; --ink:#E3ECEA; --muted:#98ABA8; --line:#283533;
+  --accent:#5CC0B4; --accent-ink:#0B1A18; --accent-soft:#1A3431;
+  --med:#AFA2F0; --med-soft:#26223F;
+  --warn:#EBA06A; --warn-soft:#3A2617;
+  --danger:#F28A82; --danger-soft:#3D1D1B;
+  --ok:#72CC96; color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5}
+button,input,select,textarea{font:inherit;color:inherit}
+.wrap{max-width:720px;margin:0 auto;padding-inline:16px;padding-block:0 calc(88px + env(safe-area-inset-bottom,0px))}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:14px 10px;border-bottom:1px solid var(--line);margin-inline:-16px;padding-inline:16px}
+.top-row{display:flex;align-items:center;justify-content:space-between;gap:12px;max-width:720px;margin:0 auto}
+.brand{font-family:var(--display);font-weight:700;font-size:1.25rem;letter-spacing:-.01em;margin:0}
+.brand span{color:var(--accent)}
+.daynav{display:flex;align-items:center;gap:4px}
+.daynav button{background:none;border:1px solid var(--line);border-radius:999px;width:34px;height:34px;cursor:pointer}
+.daynav .lbl{font-weight:600;font-variant-numeric:tabular-nums;min-width:7.5em;text-align:center;font-size:.92rem}
+h2{font-family:var(--display);font-weight:700;font-size:1.5rem;line-height:1.2;margin:22px 0 4px;text-wrap:balance;letter-spacing:-.01em}
+h3{font-family:var(--display);font-weight:500;font-size:1.1rem;margin:22px 0 8px}
+.lede{color:var(--muted);margin:0 0 14px;max-width:62ch}
+.eyebrow{text-transform:uppercase;letter-spacing:.08em;font-size:.72rem;font-weight:700;color:var(--muted)}
+.small{font-size:.86rem;color:var(--muted)}
+section[hidden]{display:none!important}
+
+/* next up */
+.next{background:var(--accent);color:var(--accent-ink);border-radius:var(--r);padding:16px 18px;margin-top:16px;display:grid;gap:4px}
+.next .eyebrow{color:inherit;opacity:.8}
+.next .what{font-family:var(--display);font-size:1.35rem;font-weight:700;line-height:1.2}
+.next .when{font-variant-numeric:tabular-nums;opacity:.9}
+.kitchen{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:10px 0;border-bottom:1px solid var(--line);font-size:.92rem}
+.kitchen b{font-variant-numeric:tabular-nums}
+
+/* timeline */
+ol.tl{list-style:none;margin:8px 0 0;padding:0}
+.ti{display:grid;grid-template-columns:5.6em 1fr auto;gap:12px;align-items:start;padding:12px 0;border-bottom:1px solid var(--line)}
+.ti .tt{font-variant-numeric:tabular-nums;font-weight:600;font-size:.9rem;padding-top:2px}
+.ti .tb{min-width:0}
+.ti .tlabel{font-weight:600;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.ti .tdet{color:var(--muted);font-size:.92rem}
+.tag{font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;font-weight:700;padding:2px 7px;border-radius:999px;background:var(--accent-soft);color:var(--accent)}
+.tag.med{background:var(--med-soft);color:var(--med)}
+.tag.rule{background:var(--warn-soft);color:var(--warn)}
+.ti.rule .tlabel{color:var(--warn)}
+.ti.done .tlabel,.ti.done .tdet{text-decoration:line-through;text-decoration-color:var(--muted);opacity:.7}
+.chk{width:40px;height:40px;border-radius:50%;border:2px solid var(--line);background:var(--surface);cursor:pointer;display:grid;place-items:center;font-weight:700;color:transparent}
+.chk[aria-pressed="true"]{background:var(--ok);border-color:var(--ok);color:#fff}
+.chk:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.donetime{font-size:.75rem;color:var(--ok);font-variant-numeric:tabular-nums}
+
+/* forms */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;display:grid;gap:14px}
+.field{display:grid;gap:6px}
+.field label,.lab{font-weight:600;font-size:.92rem}
+input[type=text],input[type=time],textarea,select{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--bg)}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.hbrow{display:flex;justify-content:space-between;align-items:baseline}
+.hbval{font-family:var(--display);font-weight:700;font-size:1.4rem;font-variant-numeric:tabular-nums}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{position:relative}
+.chip input{position:absolute;opacity:0;inset:0}
+.chip span{display:inline-block;padding:8px 12px;border:1px solid var(--line);border-radius:999px;font-size:.9rem;cursor:pointer;background:var(--bg)}
+.chip input:checked+span{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600}
+.chip input:focus-visible+span{outline:3px solid var(--accent);outline-offset:2px}
+.btn{border:0;border-radius:10px;padding:11px 16px;font-weight:600;cursor:pointer;background:var(--accent);color:var(--accent-ink)}
+.btn.ghost{background:transparent;color:var(--accent);border:1px solid var(--accent)}
+.btn.quiet{background:transparent;color:var(--muted);border:1px solid var(--line)}
+.btn.danger{background:var(--danger);color:#fff}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:12px}
+
+/* log list */
+ul.logs{list-style:none;padding:0;margin:8px 0 0}
+ul.logs li{display:grid;grid-template-columns:4.6em 1fr auto;gap:10px;padding:10px 0;border-bottom:1px solid var(--line);align-items:start}
+ul.logs .lt{font-variant-numeric:tabular-nums;font-weight:600;font-size:.9rem}
+ul.logs .ld{min-width:0;overflow-wrap:anywhere}
+.sev{display:inline-block;min-width:2.2em;text-align:center;font-weight:700;border-radius:6px;padding:0 6px;font-variant-numeric:tabular-nums}
+.sev.s0{background:var(--accent-soft);color:var(--accent)}
+.sev.s1{background:var(--warn-soft);color:var(--warn)}
+.sev.s2{background:var(--danger-soft);color:var(--danger)}
+.x{background:none;border:0;color:var(--muted);cursor:pointer;font-size:1.1rem;padding:2px 6px}
+.empty{color:var(--muted);padding:12px 0;font-size:.92rem}
+
+/* alerts */
+.alert{border-radius:var(--r);padding:14px 16px;background:var(--danger-soft);color:var(--ink);border:1px solid var(--danger);margin-top:14px}
+.alert strong{color:var(--danger)}
+.note{border-left:3px solid var(--warn);padding:6px 0 6px 12px;color:var(--muted);font-size:.92rem;margin:12px 0}
+
+/* menu */
+.days{display:grid;gap:0}
+.day{padding:14px 0;border-bottom:1px solid var(--line)}
+.day.today .dname::after{content:"Today";margin-left:8px;font-family:var(--body);font-size:.68rem;text-transform:uppercase;letter-spacing:.07em;font-weight:700;padding:2px 7px;border-radius:999px;background:var(--accent);color:var(--accent-ink);vertical-align:middle}
+.dname{font-family:var(--display);font-weight:700;font-size:1.1rem;margin:0 0 6px}
+.meals{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:8px 16px}
+.meal .eyebrow{display:block}
+ul.plain{margin:6px 0 0;padding-left:1.1em}
+ul.plain li{margin:3px 0}
+
+/* shopping */
+.cat{margin-top:18px}
+.cat h3{margin:0 0 4px;display:flex;justify-content:space-between;align-items:baseline}
+.cat h3 small{font-family:var(--body);font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.item{display:flex;gap:12px;align-items:center;padding:10px 0;border-bottom:1px solid var(--line);cursor:pointer}
+.item input{width:22px;height:22px;accent-color:var(--accent);flex:none}
+.item.got span{text-decoration:line-through;color:var(--muted)}
+.progress{height:8px;background:var(--line);border-radius:999px;overflow:hidden;margin:8px 0 4px}
+.progress i{display:block;height:100%;background:var(--accent);border-radius:999px}
+ul.avoid{list-style:none;padding:0;margin:6px 0}
+ul.avoid li{padding:8px 0 8px 22px;border-bottom:1px solid var(--line);position:relative}
+ul.avoid li::before{content:"";position:absolute;left:4px;top:50%;width:10px;height:2px;background:var(--danger)}
+
+/* tables */
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:.94rem}
+th,td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:.72rem;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+td.t{font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
+
+/* history */
+svg.chart{width:100%;height:auto;display:block}
+svg.chart .grid{stroke:var(--line);stroke-width:1}
+svg.chart text{fill:var(--muted);font-size:10px;font-family:var(--body)}
+svg.chart .bar{fill:var(--accent)}
+svg.chart .bar.hi{fill:var(--danger)}
+svg.chart .bar.mid{fill:var(--warn)}
+svg.chart .none{fill:var(--line)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:8px 14px;margin:12px 0}
+.stat{padding:10px 0;border-top:2px solid var(--accent)}
+.stat b{display:block;font-family:var(--display);font-size:1.5rem;font-variant-numeric:tabular-nums}
+.stat span{font-size:.8rem;color:var(--muted)}
+
+/* tab bar */
+nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--surface);border-top:1px solid var(--line);padding:6px 8px calc(6px + env(safe-area-inset-bottom,0px))}
+nav.tabs .in{max-width:720px;margin:0 auto;display:grid;grid-template-columns:repeat(6,1fr);gap:2px}
+nav.tabs button{min-width:0;background:none;border:0;border-radius:10px;padding:6px 0;cursor:pointer;display:grid;justify-items:center;gap:2px;font-size:.74rem;font-weight:600;color:var(--muted)}
+nav.tabs button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+nav.tabs button[aria-selected="true"]{color:var(--accent);background:var(--accent-soft)}
+
+.okbox{border-left:3px solid var(--ok);padding:6px 0 6px 12px;font-size:.92rem;margin:12px 0}
+ul.warns{list-style:none;padding:0;margin:12px 0;display:grid;gap:8px}
+ul.warns li{background:var(--warn-soft);border-radius:10px;padding:10px 12px;font-size:.92rem}
+.medrow{display:grid;grid-template-columns:auto 1fr 8.5em;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+.medrow:last-child{border-bottom:0}
+.medrow .mn{min-width:0}
+.medrow input[type=checkbox]{width:22px;height:22px;accent-color:var(--accent)}
+.tag.move{background:var(--ok);color:var(--surface)}
+.tag.work{background:var(--line);color:var(--ink)}
+.ti.work .tlabel{color:var(--muted)}
+.exlist{display:grid;gap:0}
+.ex{padding:14px 0;border-bottom:1px solid var(--line)}
+.ex h4{margin:0 0 4px;font-size:1rem;font-family:var(--display);font-weight:700}
+.ex p{margin:0;color:var(--muted);font-size:.94rem}
+ol.steps{margin:8px 0 0;padding-left:1.3em}
+ol.steps li{margin:4px 0}
+.stopbox{border:1px solid var(--danger);background:var(--danger-soft);border-radius:var(--r);padding:14px 16px;margin-top:14px}
+.stopbox strong{color:var(--danger)}
+.foot{color:var(--muted);font-size:.82rem;margin-top:28px}
+@media (prefers-reduced-motion: no-preference){.chk,.chip span,nav.tabs button{transition:background .15s,color .15s,border-color .15s}}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div class="top-row">
+      <p class="brand">GERD <span>Plan</span></p>
+      <div class="daynav" id="daynav">
+        <button id="prevDay" aria-label="Previous day">‹</button>
+        <span class="lbl" id="dayLbl"></span>
+        <button id="nextDay" aria-label="Next day">›</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section id="tab-today" aria-label="Today"></section>
+    <section id="tab-menu" aria-label="Menu" hidden></section>
+    <section id="tab-shop" aria-label="Shopping" hidden></section>
+    <section id="tab-meds" aria-label="Medication" hidden></section>
+    <section id="tab-move" aria-label="Exercise" hidden></section>
+    <section id="tab-history" aria-label="History" hidden></section>
+  </main>
+</div>
+
+<nav class="tabs" aria-label="Sections">
+  <div class="in" role="tablist">
+    <button role="tab" data-tab="today" aria-selected="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg>Today</button>
+    <button role="tab" data-tab="menu" aria-selected="false"><svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="6"/><path d="M4 4v6M6 4v6M5 10v10M19 4c-2 2-2 6 0 8v8"/></svg>Menu</button>
+    <button role="tab" data-tab="shop" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M5 7h14l-1.5 12h-11z"/><path d="M9 7a3 3 0 0 1 6 0"/></svg>Shopping</button>
+    <button role="tab" data-tab="meds" aria-selected="false"><svg viewBox="0 0 24 24"><rect x="4" y="9" width="16" height="7" rx="3.5" transform="rotate(-35 12 12.5)"/><path d="M10 8.5l4 6"/></svg>Meds</button>
+    <button role="tab" data-tab="move" aria-selected="false"><svg viewBox="0 0 24 24"><circle cx="13" cy="4.5" r="1.8"/><path d="M9 21l2.5-6 3 2.5V21M7 11l3-3h4l2 3 3 1M11.5 8l-1.5 7"/></svg>Move</button>
+    <button role="tab" data-tab="history" aria-selected="false"><svg viewBox="0 0 24 24"><path d="M5 19V11M10 19V6M15 19v-5M20 19V9"/></svg>History</button>
+  </div>
+</nav>
+
+<script>
+(function(){
+"use strict";
+// ---------- Plan content ----------
+const MENU=[
+ {day:"Monday",b:"Oatmeal with banana and a little cinnamon",l:"Baked chicken, rice, and cooked carrots",d:"Baked cod or tilapia with dill, potato, and green beans"},
+ {day:"Tuesday",b:"Scrambled eggs with spinach and whole-grain toast",l:"Leftover chicken and rice with zucchini",d:"Lean turkey patties seasoned with parsley and thyme, sweet potato, and carrots"},
+ {day:"Wednesday",b:"Plain low-fat yogurt with banana and oats, if tolerated",l:"Chicken soup with rice, carrots, spinach, and low-sodium broth",d:"Chicken with rosemary, plain pasta tossed with a little olive oil, and green beans"},
+ {day:"Thursday",b:"Oatmeal with chopped pear",l:"Leftover chicken soup with toast",d:"Baked fish, rice, and zucchini seasoned with basil"},
+ {day:"Friday",b:"Egg and toast with melon",l:"Mild turkey patty on whole-grain bread with cooked carrots",d:"Baked chicken, sweet potato, and spinach"},
+ {day:"Saturday",b:"Plain low-fat yogurt with pear and oats, or oatmeal",l:"Chicken-and-rice bowl with green beans",d:"Turkey meatballs without tomato sauce, pasta, and zucchini"},
+ {day:"Sunday",b:"Scrambled eggs, toast, and banana",l:"Leftover turkey meatballs with rice and carrots",d:"Chicken soup with vegetables and a slice of bread"}
+];
+const SNACKS=["Banana, pear, or melon","Plain crackers or rice cakes","Plain low-fat yogurt, if tolerated","A hard-boiled egg"];
+const SHOP=[
+ {cat:"Produce",items:["Bananas, 5–7","One small melon or a container of cut melon","Pears, 3–4","Potatoes or sweet potatoes, 4–5","Carrots, 1 bag","Green beans, fresh or frozen","Zucchini, 2–3","Spinach, fresh or frozen"]},
+ {cat:"Protein",note:"Choose plain products so he can control the seasoning.",items:["Skinless chicken breasts or tenderloins, about 2 pounds","Fish fillets, such as cod, tilapia, or salmon, about 1 pound","Lean ground turkey, 1 pound","Eggs, 1 dozen","Optional: plain tofu or canned beans, if tolerated"]},
+ {cat:"Grains and starches",items:["Plain oatmeal","Brown or white rice","Whole-grain bread","Plain pasta","Plain crackers","Optional: plain rice cakes"]},
+ {cat:"Dairy or alternatives",note:"He does not need to eliminate dairy unless it triggers symptoms.",items:["Low-fat milk or an unsweetened milk alternative","Plain low-fat yogurt, if tolerated"]},
+ {cat:"Seasonings and cooking basics",items:["Olive oil, used lightly","Salt","Dried parsley","Dried thyme","Dried rosemary","Dried basil or oregano","Dill","Cinnamon","Low-sodium broth without hot peppers or tomato","Optional: fresh ginger, to try in small amounts"]},
+ {cat:"Drinks",items:["Water, tap or bottled","Optional: caffeine-free, nonmint tea"]},
+ {cat:"For work days",items:["Lunch containers for packed leftovers","Pill case for the work-day sucralfate dose","Water bottle"]}
+];
+const AVOID=["Hot sauces, cayenne, and spicy seasoning blends","Tomato sauces, salsa, and tomato-based soups","Citrus fruit and citrus juice","Peppermint or spearmint products","Chocolate","Coffee and energy drinks","Alcohol","Fried foods, fatty meats, and heavy cream sauces"];
+// Mon..Sun after-work plan
+const EXWEEK=[
+ {t:"Easy walk",m:"20 min",d:"Flat route at a pace where he can still talk. Finish with 5 minutes of belly breathing."},
+ {t:"Stationary bike",m:"15–20 min",d:"Low resistance. Sit tall instead of hunching over the handlebars."},
+ {t:"Walk and standing stretches",m:"20 + 10 min",d:"Standing calf, chest-opener, and side stretches. Skip toe-touches and other forward folds."},
+ {t:"Light upright strength",m:"15–20 min",d:"Wall push-ups, sit-to-stand from a chair, and standing band rows: 2 sets of 10. Breathe out on the effort; no breath-holding."},
+ {t:"Easy walk",m:"20–30 min",d:"Same easy pace as Monday. Add 5 minutes only if the week has gone well."},
+ {t:"Longer walk",m:"30 min",d:"A park or neighborhood loop. Swimming is an option once his clinician clears him after RSV."},
+ {t:"Rest or gentle stretching",m:"15 min",d:"Seated and standing stretches plus belly breathing. No inversions and no lying flat after meals."}
+];
+const DEFAULT_MEDS=[
+ {id:"panto",name:"Pantoprazole",dose:"40 mg",time:"05:45",on:true,kind:"ppi",note:"Once daily at the same time each morning. Swallow whole; don't split, chew, or crush."},
+ {id:"suc1",name:"Sucralfate",dose:"1 g",time:"10:30",on:true,kind:"suc",note:"Dose 1 of 2, at work. Empty stomach: 1 hour before or 2 hours after eating."},
+ {id:"suc2",name:"Sucralfate",dose:"1 g",time:"17:00",on:true,kind:"suc",note:"Dose 2 of 2. One hour before dinner, after exercise."},
+ {id:"famo",name:"Famotidine",dose:"20 mg",time:"21:00",on:true,kind:"h2",note:"Once daily. Prescription famotidine is usually taken at bedtime; follow the time on his label. Take with a full glass of water."}
+];
+
+// ---------- Storage ----------
+const KEY="gerd-tracker-v2",OLDKEY="gerd-tracker-v1";
+const DEFAULT={settings:{wake:"05:30",breakfast:"06:15",commute:15,workStart:"07:00",workEnd:"16:00",workDays:[1,2,3,4,5],lunch:"11:30",snack:"14:30",snackOn:true,exercise:"16:30",exMin:30,dinner:"18:00",walkOn:true,bed:"21:30",antacid:false,meds:DEFAULT_MEDS},shop:{},days:{}};
+let storageOK=true;
+function clone(o){return JSON.parse(JSON.stringify(o))}
+function merge(o){
+  const d=clone(DEFAULT);o=o||{};
+  const st=o.settings||{};
+  if(Array.isArray(st.meds)){Object.assign(d.settings,st);d.settings.meds=st.meds.map(m=>Object.assign({},DEFAULT_MEDS.find(x=>x.id===m.id)||{},m))}
+  d.shop=o.shop||{};d.days=o.days||{};return d;
+}
+function load(){
+  try{
+    const r=localStorage.getItem(KEY);if(r)return merge(JSON.parse(r));
+    const old=localStorage.getItem(OLDKEY);if(old){const o=JSON.parse(old);return merge({shop:o.shop,days:o.days})}
+  }catch(e){storageOK=false}
+  return clone(DEFAULT);
+}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){storageOK=false}}
+let S=load();
+
+// ---------- Helpers ----------
+const $=s=>document.querySelector(s);
+function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function pad(n){return String(n).padStart(2,"0")}
+function dk(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate())}
+function toMin(t){const[h,m]=String(t||"0:0").split(":").map(Number);return (h||0)*60+(m||0)}
+function toHHMM(min){min=((min%1440)+1440)%1440;return pad(Math.floor(min/60))+":"+pad(min%60)}
+function fmt(min){min=((min%1440)+1440)%1440;let h=Math.floor(min/60),m=min%60;const ap=h<12?"AM":"PM";h=h%12||12;return h+":"+pad(m)+" "+ap}
+function nowMin(){const n=new Date();return n.getHours()*60+n.getMinutes()}
+function hhmm(){const n=new Date();return pad(n.getHours())+":"+pad(n.getMinutes())}
+function menuFor(d){return MENU[(d.getDay()+6)%7]}
+function exFor(d){return EXWEEK[(d.getDay()+6)%7]}
+function getDay(key,create){if(!S.days[key]){if(!create)return {done:{},logs:[]};S.days[key]={done:{},logs:[]}}return S.days[key]}
+function isSameDay(a,b){return dk(a)===dk(b)}
+function sevClass(v){return v>=7?"s2":v>=4?"s1":"s0"}
+function isWorkDay(d){return S.settings.workDays.indexOf(d.getDay())>=0}
+function dur(m){m=Math.abs(m);const h=Math.floor(m/60),r=m%60;return (h?h+" h":"")+(h&&r?" ":"")+(r?r+" min":"")||"0 min"}
+
+// ---------- Schedule ----------
+function buildSchedule(d){
+  const s=S.settings,menu=menuFor(d),ex=exFor(d),work=isWorkDay(d);
+  const B=toMin(s.breakfast),L=toMin(s.lunch),D=toMin(s.dinner),Z=toMin(s.bed),W1=toMin(s.workStart),W2=toMin(s.workEnd),C=+s.commute||0;
+  const out=[];
+  out.push({id:"wake",t:toMin(s.wake),kind:"rule",label:"Wake up",det:"Sit or stand up before eating or taking medicine."});
+  s.meds.forEach(m=>{if(m.on)out.push({id:"m-"+m.id,t:toMin(m.time),kind:"med",label:m.name+" "+m.dose,det:m.note})});
+  out.push({id:"b",t:B,kind:"meal",label:"Breakfast",det:menu.b});
+  if(work){
+    out.push({id:"leave",t:W1-C,kind:"work",label:"Leave for work",det:"Pack lunch, snack, water, and the work-day sucralfate dose."});
+    out.push({id:"work",t:W1,kind:"work",label:"Work until "+fmt(W2),det:"No eating between breakfast and lunch keeps the sucralfate dose on an empty stomach."});
+  }
+  out.push({id:"l",t:L,kind:"meal",label:"Lunch",det:(work?"Packed: ":"")+menu.l});
+  if(s.snackOn)out.push({id:"s",t:toMin(s.snack),kind:"snack",label:"Small snack",det:"Banana, pear, plain crackers, or yogurt. Keep it light before exercise."});
+  if(work)out.push({id:"home",t:W2+C,kind:"work",label:"Home from work",det:"Change into loose clothes without a tight waistband."});
+  out.push({id:"ex",t:toMin(s.exercise),kind:"move",label:ex.t+" · "+ex.m,det:ex.d});
+  out.push({id:"d",t:D,kind:"meal",label:"Dinner",det:menu.d});
+  if(s.walkOn)out.push({id:"walk",t:D+40,kind:"move",label:"After-dinner stroll · 10 min",det:"Slow and upright. Helps him stay off the couch right after eating."});
+  out.push({id:"cut",t:Z-180,kind:"rule",label:"Finish eating for the night",det:"At least three hours before lying down. Water is fine."});
+  out.push({id:"bed",t:Z,kind:"rule",label:"Bedtime",det:"Raising the head of the bed may help nighttime symptoms."});
+  return out.sort((a,b)=>a.t-b.t);
+}
+
+// spacing checks against MedlinePlus label guidance
+function checkSpacing(){
+  const s=S.settings,warn=[];
+  const meals=[{n:"breakfast",t:toMin(s.breakfast)},{n:"lunch",t:toMin(s.lunch)},{n:"dinner",t:toMin(s.dinner)}];
+  if(s.snackOn)meals.push({n:"the snack",t:toMin(s.snack)});
+  const meds=s.meds.filter(m=>m.on);
+  meds.filter(m=>m.kind==="suc").forEach(m=>{
+    const t=toMin(m.time);
+    meals.forEach(ml=>{
+      const before=ml.t-t,after=t-ml.t;
+      if(before>=0&&before<60)warn.push("Sucralfate at "+fmt(t)+" is only "+dur(before)+" before "+ml.n+". It should be at least 1 hour before eating.");
+      if(after>=0&&after<120)warn.push("Sucralfate at "+fmt(t)+" is only "+dur(after)+" after "+ml.n+". It should be at least 2 hours after eating.");
+    });
+    meds.filter(o=>o.kind!=="suc").forEach(o=>{
+      const gap=Math.abs(toMin(o.time)-t);
+      if(gap<120)warn.push(o.name+" at "+fmt(toMin(o.time))+" is "+dur(gap)+" from sucralfate. Sucralfate can reduce absorption of other medicines; ask his pharmacist whether these need 2 hours apart.");
+    });
+  });
+  const lastBeforeEx=meals.map(m=>toMin(s.exercise)-m.t).filter(g=>g>=0).sort((a,b)=>a-b)[0];
+  if(lastBeforeEx!==undefined&&lastBeforeEx<60)warn.push("Exercise starts "+dur(lastBeforeEx)+" after eating. Wait 1–2 hours after a meal.");
+  if(isWorkDay(new Date())&&toMin(s.exercise)<toMin(s.workEnd)+(+s.commute||0))warn.push("Exercise is set before he gets home from work.");
+  if(toMin(s.bed)-toMin(s.dinner)<180)warn.push("Dinner is less than 3 hours before bedtime.");
+  if(toMin(s.breakfast)<toMin(s.workStart)&&toMin(s.workStart)-(+s.commute||0)-toMin(s.breakfast)<15)warn.push("Breakfast leaves less than 15 minutes before he has to leave.");
+  return warn;
+}
+
+// ---------- State ----------
+let viewDate=new Date();
+let tab="today";
+const pending={};
+const TABS=["today","menu","shop","meds","move","history"];
+
+function setTab(t){
+  tab=t;
+  document.querySelectorAll("nav.tabs button").forEach(b=>b.setAttribute("aria-selected",String(b.dataset.tab===t)));
+  TABS.forEach(x=>{$("#tab-"+x).hidden=x!==t});
+  $("#daynav").style.visibility=t==="today"?"visible":"hidden";
+  render();
+  try{history.replaceState(null,"","#"+t)}catch(e){}
+  window.scrollTo(0,0);
+}
+function render(){
+  $("#dayLbl").textContent=isSameDay(viewDate,new Date())?"Today":viewDate.toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"});
+  ({today:renderToday,menu:renderMenu,shop:renderShop,meds:renderMeds,move:renderMove,history:renderHistory})[tab]();
+}
+
+// ---------- Today ----------
+const TAGS={med:'<span class="tag med">Med</span>',rule:'<span class="tag rule">Routine</span>',snack:'<span class="tag">Snack</span>',move:'<span class="tag move">Move</span>',work:'<span class="tag work">Work</span>',meal:''};
+function renderToday(){
+  const key=dk(viewDate),day=getDay(key,false),sched=buildSchedule(viewDate);
+  const today=isSameDay(viewDate,new Date()),now=nowMin(),menu=menuFor(viewDate),s=S.settings;
+  const checkable=i=>i.kind==="med"||i.kind==="meal"||i.kind==="snack"||i.kind==="move";
+  const next=today?sched.find(i=>checkable(i)&&!day.done[i.id]&&i.t>=now-30)||null:null;
+  const cut=toMin(s.bed)-180;
+  let kitchen;
+  if(!today)kitchen="Kitchen closes at <b>"+fmt(cut)+"</b>";
+  else if(now<cut){const r=cut-now;kitchen="Kitchen closes at <b>"+fmt(cut)+"</b> · "+dur(r)+" left";}
+  else kitchen="Kitchen closed at <b>"+fmt(cut)+"</b> · water only until bedtime";
+  const planned=sched.filter(i=>i.kind==="med"||i.kind==="meal");
+  const doneCount=planned.filter(i=>day.done[i.id]).length;
+  const alarm=day.logs.some(l=>l.chest||l.swallow);
+  let h='<h2>'+esc(menu.day)+'’s plan</h2><p class="lede">'+(isWorkDay(viewDate)?'Work day. ':'Day off. ')+doneCount+' of '+planned.length+' meals and doses checked off.</p>';
+  if(alarm)h+='<div class="alert" role="alert"><strong>Get this checked, and skip exercise until then.</strong> Chest tightness during RSV recovery, or trouble swallowing, needs medical assessment even with diet changes. Call 911 for chest pain with shortness of breath, sweating, or pain spreading to the arm, jaw, or back.</div>';
+  if(next)h+='<div class="next"><span class="eyebrow">Up next</span><span class="what">'+esc(next.label)+'</span><span class="when">'+fmt(next.t)+' · '+esc(next.det)+'</span></div>';
+  h+='<div class="kitchen"><span>'+kitchen+'</span><span>Bedtime '+fmt(toMin(s.bed))+'</span></div><ol class="tl">';
+  sched.forEach(i=>{
+    const done=day.done[i.id];
+    h+='<li class="ti '+i.kind+(done?' done':'')+'"><span class="tt">'+fmt(i.t)+'</span><div class="tb"><div class="tlabel">'+esc(i.label)+' '+TAGS[i.kind]+'</div><div class="tdet">'+esc(i.det)+'</div>'+(done?'<div class="donetime">Checked at '+fmt(toMin(done))+'</div>':'')+'</div>';
+    h+=checkable(i)?'<button class="chk" data-check="'+i.id+'" aria-pressed="'+(done?"true":"false")+'" aria-label="Mark '+esc(i.label)+' done">✓</button>':'<span></span>';
+    h+='</li>';
+  });
+  h+='</ol>';
+  h+='<h3>Log symptoms</h3><form class="panel" id="logForm" autocomplete="off">';
+  h+='<div class="field"><div class="hbrow"><label for="lf-hb">Heartburn or burning</label><span class="hbval"><output id="hbOut" for="lf-hb">0</output><span class="small"> / 10</span></span></div><input type="range" id="lf-hb" min="0" max="10" value="0"></div>';
+  h+='<div class="field"><span class="lab">Also noticed</span><div class="chips">'+chip("lf-regurg","Regurgitation or sour taste")+chip("lf-cough","Cough or hoarse voice")+chip("lf-bloat","Bloating or burping")+chip("lf-night","Woke at night")+chip("lf-exer","During or after exercise")+chip("lf-swallow","Trouble swallowing")+chip("lf-chest","Chest tightness")+'</div></div>';
+  h+='<div class="grid2"><div class="field"><label for="lf-food">Food or drink suspected</label><input type="text" id="lf-food" placeholder="e.g. turkey meatballs"></div><div class="field"><label for="lf-time">Time</label><input type="time" id="lf-time" value="'+(today?hhmm():"12:00")+'"></div></div>';
+  h+='<div class="field"><label for="lf-note">Notes</label><input type="text" id="lf-note" placeholder="Large portion, ate late, stressful shift…"></div>';
+  h+='<div class="row"><button class="btn" type="submit">Add entry</button>'+(s.antacid?'<button class="btn ghost" type="button" id="antacidBtn">Log antacid taken</button>':'')+'</div></form>';
+  h+='<h3>Entries</h3>';
+  if(!day.logs.length)h+='<p class="empty">No entries yet for this day. A quick entry after meals and after exercise makes patterns easier to spot.</p>';
+  else{
+    h+='<ul class="logs">';
+    day.logs.slice().sort((a,b)=>a.t<b.t?-1:1).forEach(l=>{
+      let d;
+      if(l.type==="antacid")d='<span class="tag med">Med</span> Antacid taken'+(l.sucNear?'<div class="small"><strong>Within 30 minutes of a sucralfate dose.</strong> Keep antacids at least 30 minutes before or after sucralfate.</div>':'');
+      else{
+        const b=[];if(l.regurg)b.push("regurgitation");if(l.cough)b.push("cough/hoarse");if(l.bloat)b.push("bloating");if(l.night)b.push("woke at night");if(l.exer)b.push("with exercise");if(l.swallow)b.push("<strong>trouble swallowing</strong>");if(l.chest)b.push("<strong>chest tightness</strong>");
+        d='<span class="sev '+sevClass(l.hb)+'">'+l.hb+'</span> '+(b.length?b.join(", "):"heartburn only")+(l.food?'<div class="small">Suspected: '+esc(l.food)+'</div>':'')+(l.note?'<div class="small">'+esc(l.note)+'</div>':'');
+      }
+      h+='<li><span class="lt">'+fmt(toMin(l.t))+'</span><div class="ld">'+d+'</div><button class="x" data-del="'+l.id+'" aria-label="Delete entry">×</button></li>';
+    });
+    h+='</ul>';
+  }
+  h+=footer();
+  $("#tab-today").innerHTML=h;
+  const r=$("#lf-hb");r.addEventListener("input",()=>{$("#hbOut").textContent=r.value});
+}
+function chip(id,txt){return '<label class="chip"><input type="checkbox" id="'+id+'"><span>'+esc(txt)+'</span></label>'}
+
+// ---------- Menu ----------
+function renderMenu(){
+  const ti=(new Date().getDay()+6)%7;
+  let h='<h2>Weekly menu</h2><p class="lede">Modest portions, lean protein, and mild seasonings. On work days, lunch is packed leftovers. Adjust foods based on what he tolerates; no menu prevents reflux for everyone.</p><div class="days">';
+  MENU.forEach((m,i)=>{h+='<div class="day'+(i===ti?' today':'')+'"><p class="dname">'+m.day+'</p><div class="meals">'+meal("Breakfast",m.b)+meal("Lunch",m.l)+meal("Dinner",m.d)+'</div></div>'});
+  h+='</div><h3>Snacks</h3><p class="small">One small snack mid-afternoon, at least an hour before exercise and not near bedtime. Skip morning snacks on work days so the sucralfate dose stays on an empty stomach.</p><ul class="plain">'+SNACKS.map(x=>'<li>'+esc(x)+'</li>').join("")+'</ul>';
+  h+='<h3>Make the week easier</h3><p>Bake several chicken portions, cook a pot of rice, and make soup at the beginning of the week. Pack the next day’s lunch at dinner. Refrigerate leftovers promptly, use them within 3–4 days, and freeze portions intended for later.</p>';
+  h+='<h3>How he eats matters, too</h3><p>Keep meals comfortably sized, stay upright afterward, and finish eating at least three hours before lying down or bedtime. Use mild herbs and a little oil; leave off hot sauce, tomato sauce, citrus dressings, and other foods that trigger his symptoms.</p>';
+  h+=footer();$("#tab-menu").innerHTML=h;
+}
+function meal(k,v){return '<div class="meal"><span class="eyebrow">'+k+'</span>'+esc(v)+'</div>'}
+
+// ---------- Shopping ----------
+function renderShop(){
+  let total=0,got=0;SHOP.forEach(c=>c.items.forEach(it=>{total++;if(S.shop[it])got++}));
+  let h='<h2>Shopping list</h2><p class="lede">A starter list for one adult for about a week. Buy smaller amounts at first so he can learn what agrees with him.</p>';
+  h+='<div class="progress" aria-hidden="true"><i style="width:'+Math.round(got/total*100)+'%"></i></div><div class="row" style="justify-content:space-between"><span class="small">'+got+' of '+total+' in the cart</span><button class="btn quiet" id="resetShop">'+(pending.shop?"Tap again to clear":"Clear checks")+'</button></div>';
+  SHOP.forEach((c,ci)=>{
+    const g=c.items.filter(i=>S.shop[i]).length;
+    h+='<div class="cat"><h3>'+esc(c.cat)+'<small>'+g+'/'+c.items.length+'</small></h3>';
+    c.items.forEach((it,ii)=>{const id="sh-"+ci+"-"+ii;h+='<label class="item'+(S.shop[it]?' got':'')+'" for="'+id+'"><input type="checkbox" id="'+id+'" data-shop="'+esc(it)+'"'+(S.shop[it]?' checked':'')+'><span>'+esc(it)+'</span></label>'});
+    if(c.note)h+='<p class="small">'+esc(c.note)+'</p>';
+    h+='</div>';
+  });
+  h+='<h3>Leave out of the starter cart</h3><ul class="avoid">'+AVOID.map(x=>'<li>'+esc(x)+'</li>').join("")+'</ul>';
+  h+='<p class="note">These are common reflux triggers, but he only needs lasting restrictions on foods that actually worsen his symptoms. The History tab tallies the foods he flags.</p>';
+  h+=footer();$("#tab-shop").innerHTML=h;
+}
+
+// ---------- Meds ----------
+function renderMeds(){
+  const s=S.settings,w=checkSpacing();
+  let h='<h2>Medicines and daily times</h2><p class="lede">Times are set around a 7:00 to 4:00 work day with a 15-minute commute. Change any time and the daily checklist and spacing checks update. Follow his prescription labels where they differ.</p>';
+  h+='<h3>His medicines</h3><div class="panel" style="gap:0">';
+  s.meds.forEach((m,i)=>{h+='<div class="medrow"><input type="checkbox" id="mo-'+i+'" data-medon="'+i+'"'+(m.on?' checked':'')+' aria-label="Include '+esc(m.name)+' in schedule"><label class="mn" for="mo-'+i+'"><strong>'+esc(m.name+" "+m.dose)+'</strong><br><span class="small">'+esc(m.note)+'</span></label><input type="time" id="mt-'+i+'" data-medtime="'+i+'" value="'+esc(m.time)+'" aria-label="'+esc(m.name)+' time"></div>'});
+  h+='<div class="medrow"><input type="checkbox" id="ms-antacid"'+(s.antacid?' checked':'')+'><label class="mn" for="ms-antacid"><strong>Antacid as needed</strong><br><span class="small">Adds a “Log antacid” button. Keep antacids at least 30 minutes before or after sucralfate.</span></label><span></span></div>';
+  h+='</div>';
+  h+='<h3>Spacing check</h3>';
+  h+=w.length?'<ul class="warns">'+w.map(x=>'<li>'+esc(x)+'</li>').join("")+'</ul>':'<p class="okbox">All set. Both sucralfate doses fall at least 1 hour before and 2 hours after eating, every other medicine is at least 2 hours from sucralfate, dinner ends 3 hours before bed, and exercise starts well after the snack.</p>';
+  h+='<h3>Daily times</h3><form class="panel" id="timeForm" autocomplete="off"><div class="grid2">'+
+    tf("wake","Wake up")+tf("breakfast","Breakfast")+tf("workStart","Work starts")+tf("workEnd","Work ends")+
+    '<div class="field"><label for="ms-commute">Commute (minutes)</label><input type="text" inputmode="numeric" id="ms-commute" data-num="commute" value="'+esc(s.commute)+'"></div>'+
+    tf("lunch","Lunch")+tf("snack","Afternoon snack")+tf("exercise","Exercise")+tf("dinner","Dinner")+tf("bed","Bedtime")+'</div>';
+  h+='<div class="chips"><label class="chip"><input type="checkbox" id="ms-snackOn"'+(s.snackOn?' checked':'')+'><span>Afternoon snack</span></label><label class="chip"><input type="checkbox" id="ms-walkOn"'+(s.walkOn?' checked':'')+'><span>After-dinner stroll</span></label></div></form>';
+  h+='<h3>Work-day schedule</h3><div class="tablewrap"><table><thead><tr><th>Time</th><th>What</th></tr></thead><tbody>';
+  const sample=new Date();while(!isWorkDay(sample))sample.setDate(sample.getDate()+1);
+  buildSchedule(sample).forEach(i=>{h+='<tr><td class="t">'+fmt(i.t)+'</td><td><strong>'+esc(i.label)+'</strong><br><span class="small">'+esc(i.det)+'</span></td></tr>'});
+  h+='</tbody></table></div><p class="small">On days off, the work and commute rows drop out and the medicine times stay the same, which keeps doses consistent.</p>';
+  h+='<h3>Why these times</h3><ul class="plain">'+
+    '<li><strong>Pantoprazole:</strong> The tablets can be taken with or without food. What matters most is the same time every day, swallowed whole. Taking it first thing keeps it well apart from sucralfate.</li>'+
+    '<li><strong>Sucralfate:</strong> Works on an empty stomach, 1 hour before or 2 hours after meals, at about the same times each day. That rules out a mid-morning snack on work days. The second dose fits between exercise and dinner.</li>'+
+    '<li><strong>Famotidine:</strong> Prescription famotidine once a day is usually taken at bedtime. If his label says a different time, change it above.</li>'+
+    '<li><strong>Antacids:</strong> At least 30 minutes before or after sucralfate.</li></ul>';
+  h+='<p class="note">Sucralfate can lower how much of some other medicines the body absorbs. Ask his pharmacist to review all three GERD medicines together with anything he is taking for RSV recovery, and to confirm these times.</p>';
+  h+=footer();$("#tab-meds").innerHTML=h;
+}
+function tf(k,l){return '<div class="field"><label for="ms-'+k+'">'+l+'</label><input type="time" id="ms-'+k+'" data-time="'+k+'" value="'+esc(S.settings[k])+'"></div>'}
+
+// ---------- Move ----------
+function renderMove(){
+  const s=S.settings,ti=(new Date().getDay()+6)%7;
+  let h='<h2>After-work exercise</h2><p class="lede">Moderate, upright, low-impact movement suits reflux best. Exercise at '+fmt(toMin(s.exercise))+', about two hours after the afternoon snack and before dinner, so his stomach is mostly empty.</p>';
+  h+='<div class="stopbox"><strong>Stop and rest if he has chest tightness, shortness of breath, dizziness, or a cough that worsens with effort.</strong> He is still recovering from RSV, so persistent chest tightness needs a medical check before he exercises. Ask his clinician when it is safe to build up.</div>';
+  h+='<h3>This week</h3><div class="days">';
+  EXWEEK.forEach((e,i)=>{h+='<div class="day'+(i===ti?' today':'')+'"><p class="dname">'+MENU[i].day+'</p><div><strong>'+esc(e.t)+'</strong> · <span class="small">'+esc(e.m)+'</span></div><p class="small" style="margin:4px 0 0">'+esc(e.d)+'</p></div>'});
+  h+='</div>';
+  h+='<h3>Best choices</h3><div class="exlist">'+
+    ex("Walking","The safest place to start. Flat routes, comfortable shoes, a pace where he can still talk in full sentences.")+
+    ex("Stationary cycling","Low impact and easy to keep gentle. Sit upright; a hunched posture squeezes the stomach.")+
+    ex("Light strength, standing or seated","Wall push-ups, sit-to-stand from a chair, and band rows. Light weight, breathe out on the effort, never hold the breath.")+
+    ex("Gentle yoga and stretching","Standing and seated poses only. Skip inversions such as downward dog, and forward folds.")+
+    ex("Swimming","Low impact, but wait for his clinician’s go-ahead after RSV and keep it at least 2 hours after eating.")+
+    '<div class="ex"><h4>Belly (diaphragmatic) breathing</h4><p>Small studies suggest regular breathing practice may ease reflux symptoms, and it costs nothing to try. Five minutes after his walk or before bed:</p><ol class="steps"><li>Sit upright with one hand on his chest and one on his belly.</li><li>Breathe in through the nose for about 4 seconds so the belly hand rises and the chest hand stays still.</li><li>Breathe out slowly through pursed lips for about 6 seconds.</li><li>Repeat for 5 minutes. Stop if he feels lightheaded.</li></ol></div>'+
+    '</div>';
+  h+='<h3>Build up slowly</h3><div class="tablewrap"><table><thead><tr><th>Stage</th><th>Target</th></tr></thead><tbody>'+
+    '<tr><td class="t">Week 1</td><td>10–15 minutes of easy walking most days, if he feels well</td></tr>'+
+    '<tr><td class="t">Week 2</td><td>About 20 minutes, adding the bike or light strength</td></tr>'+
+    '<tr><td class="t">Week 3 on</td><td>25–30 minutes on most days if symptoms stay quiet, working toward 150 minutes a week of moderate activity</td></tr>'+
+    '</tbody></table></div><p class="small">Move up a stage only when the current one feels easy and causes no reflux or breathing symptoms. Log any heartburn with the “During or after exercise” tag so the History tab can show it.</p>';
+  h+='<h3>Skip for now</h3><ul class="avoid">'+["Crunches, sit-ups, and other moves that squeeze the belly","Heavy lifting or straining with breath-holding","Running, jumping, and high-intensity intervals","Inversions and exercises lying flat, especially after eating","Exercising within 1–2 hours of a meal","Tight waistbands and large gulps of water mid-workout"].map(x=>'<li>'+esc(x)+'</li>').join("")+'</ul>';
+  h+=footer();$("#tab-move").innerHTML=h;
+}
+function ex(t,d){return '<div class="ex"><h4>'+esc(t)+'</h4><p>'+esc(d)+'</p></div>'}
+
+// ---------- History ----------
+function renderHistory(){
+  const days=[],base=new Date();
+  for(let i=13;i>=0;i--)days.push(new Date(base.getFullYear(),base.getMonth(),base.getDate()-i));
+  const rows=days.map(d=>{
+    const day=getDay(dk(d),false),sym=day.logs.filter(l=>l.type!=="antacid");
+    const peak=sym.length?Math.max.apply(null,sym.map(l=>l.hb)):null;
+    const meds=buildSchedule(d).filter(i=>i.kind==="med");
+    return {d,peak,n:sym.length,medsDone:meds.filter(i=>day.done[i.id]).length,meds:meds.length,antacid:day.logs.filter(l=>l.type==="antacid").length,ex:!!day.done.ex};
+  });
+  const logged=rows.filter(r=>r.peak!==null);
+  const avg=logged.length?(logged.reduce((a,r)=>a+r.peak,0)/logged.length).toFixed(1):"–";
+  const calm=logged.filter(r=>r.peak<=2).length;
+  const mp=rows.reduce((a,r)=>a+r.meds,0),md=rows.reduce((a,r)=>a+r.medsDone,0);
+  const exDays=rows.filter(r=>r.ex).length;
+  let h='<h2>Last 14 days</h2><p class="lede">Worst heartburn score each day, from his entries. Gray marks days with no entries.</p>';
+  h+='<div class="stats"><div class="stat"><b>'+avg+'</b><span>Average daily worst</span></div><div class="stat"><b>'+calm+'</b><span>Days at 2 or below</span></div><div class="stat"><b>'+(mp?Math.round(md/mp*100)+'%':'–')+'</b><span>Doses checked off</span></div><div class="stat"><b>'+exDays+'</b><span>Exercise days</span></div></div>';
+  const W=340,H=150,L=22,R=6,T=10,Bm=26,cw=(W-L-R)/14,y=v=>T+(H-T-Bm)*(1-v/10);
+  let svg='<svg class="chart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Bar chart of daily worst heartburn, 0 to 10, last 14 days">';
+  [0,5,10].forEach(v=>{svg+='<line class="grid" x1="'+L+'" x2="'+(W-R)+'" y1="'+y(v)+'" y2="'+y(v)+'"/><text x="'+(L-6)+'" y="'+(y(v)+3)+'" text-anchor="end">'+v+'</text>'});
+  rows.forEach((r,i)=>{
+    const x=L+i*cw+cw*0.18,bw=cw*0.64;
+    if(r.peak===null)svg+='<rect class="none" x="'+x+'" y="'+(y(0)-3)+'" width="'+bw+'" height="3" rx="1"/>';
+    else{const top=y(Math.max(r.peak,0.3));svg+='<rect class="bar '+(r.peak>=7?'hi':r.peak>=4?'mid':'')+'" x="'+x+'" y="'+top+'" width="'+bw+'" height="'+(y(0)-top)+'" rx="2"><title>'+r.d.toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"})+': '+r.peak+'/10</title></rect>'}
+    if(i%2===1)svg+='<text x="'+(x+bw/2)+'" y="'+(H-10)+'" text-anchor="middle">'+(r.d.getMonth()+1)+'/'+r.d.getDate()+'</text>';
+  });
+  h+=svg+'</svg>';
+  const foods={};let exSym=0;
+  Object.keys(S.days).forEach(k=>S.days[k].logs.forEach(l=>{if(l.exer)exSym++;if(l.food){const f=l.food.trim().toLowerCase();if(!f)return;foods[f]=foods[f]||{n:0,sum:0,label:l.food.trim()};foods[f].n++;foods[f].sum+=l.hb}}));
+  const fl=Object.values(foods).sort((a,b)=>b.n-a.n||b.sum-a.sum);
+  h+='<h3>Suspected foods</h3>';
+  if(!fl.length)h+='<p class="empty">Foods he names in symptom entries appear here, with how often and how strongly they line up with symptoms.</p>';
+  else{h+='<div class="tablewrap"><table><thead><tr><th>Food or drink</th><th>Times flagged</th><th>Avg. heartburn</th></tr></thead><tbody>';fl.slice(0,12).forEach(f=>{const a=f.sum/f.n;h+='<tr><td>'+esc(f.label)+'</td><td class="t">'+f.n+'</td><td class="t"><span class="sev '+sevClass(a)+'">'+a.toFixed(1)+'</span></td></tr>'});h+='</tbody></table></div><p class="note">One bad reaction is not proof. A food that keeps showing up with higher scores is worth limiting and discussing with his clinician.</p>'}
+  if(exSym)h+='<p class="note">'+exSym+' symptom '+(exSym===1?'entry was':'entries were')+' tagged with exercise. If that keeps happening, drop back a stage on the Move tab or exercise later after eating.</p>';
+  h+='<h3>Day by day</h3><div class="tablewrap"><table><thead><tr><th>Day</th><th>Worst</th><th>Entries</th><th>Doses</th><th>Moved</th></tr></thead><tbody>';
+  rows.slice().reverse().forEach(r=>{h+='<tr><td>'+r.d.toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"})+'</td><td class="t">'+(r.peak===null?'–':'<span class="sev '+sevClass(r.peak)+'">'+r.peak+'</span>')+'</td><td class="t">'+r.n+'</td><td class="t">'+(r.meds?r.medsDone+'/'+r.meds:'–')+'</td><td class="t">'+(r.ex?'Yes':'–')+'</td></tr>'});
+  h+='</tbody></table></div>';
+  h+='<h3>Back up or move data</h3><p class="small">Entries are saved in this browser on this device only'+(storageOK?'':' — <strong>this browser is blocking storage, so entries will be lost when the page closes</strong>')+'. Copy the backup text and keep it somewhere safe, or paste a backup to restore it on another device.</p>';
+  h+='<div class="panel"><div class="field"><label for="dataBox">Backup text</label><textarea id="dataBox" rows="4" spellcheck="false" placeholder="Paste a backup here to restore it"></textarea></div><div class="row"><button class="btn ghost" id="copyData" type="button">Copy backup</button><button class="btn quiet" id="importData" type="button">'+(pending.imp?"Tap again to replace all data":"Restore from pasted text")+'</button><span class="small" id="dataMsg" role="status"></span></div></div>';
+  h+=footer();$("#tab-history").innerHTML=h;
+}
+
+function footer(){return '<p class="foot">This plan supports reflux management and does not replace medical care. Persistent chest tightness during RSV recovery still needs medical assessment. Sources: NIDDK (diet and eating habits); MedlinePlus drug information for pantoprazole, famotidine, and sucralfate.</p>'}
+
+// ---------- Events ----------
+function sucNear(t){const m=toMin(t);return S.settings.meds.some(x=>x.on&&x.kind==="suc"&&Math.abs(toMin(x.time)-m)<30)}
+document.addEventListener("click",e=>{
+  const t=e.target.closest("button");if(!t)return;
+  if(t.dataset.tab){setTab(t.dataset.tab);return}
+  if(t.id==="prevDay"){viewDate=new Date(viewDate.getFullYear(),viewDate.getMonth(),viewDate.getDate()-1);render();return}
+  if(t.id==="nextDay"){viewDate=new Date(viewDate.getFullYear(),viewDate.getMonth(),viewDate.getDate()+1);render();return}
+  if(t.dataset.check){const day=getDay(dk(viewDate),true),id=t.dataset.check;if(day.done[id])delete day.done[id];else{const it=buildSchedule(viewDate).find(x=>x.id===id);day.done[id]=isSameDay(viewDate,new Date())?hhmm():toHHMM(it?it.t:720)}save();keepScroll(render);return}
+  if(t.dataset.del){const day=getDay(dk(viewDate),true);day.logs=day.logs.filter(l=>String(l.id)!==t.dataset.del);save();keepScroll(render);return}
+  if(t.id==="antacidBtn"){const tm=$("#lf-time").value||hhmm();getDay(dk(viewDate),true).logs.push({id:Date.now(),type:"antacid",t:tm,sucNear:sucNear(tm)});save();keepScroll(render);return}
+  if(t.id==="resetShop"){if(pending.shop){S.shop={};pending.shop=false;save()}else{pending.shop=true;setTimeout(()=>{pending.shop=false;if(tab==="shop")render()},4000)}keepScroll(render);return}
+  if(t.id==="copyData"){const txt=JSON.stringify(S),box=$("#dataBox");box.value=txt;
+    const fb=()=>{box.select();$("#dataMsg").textContent="Backup is selected in the box. Copy it from there."};
+    try{navigator.clipboard.writeText(txt).then(()=>{$("#dataMsg").textContent="Backup copied."},fb)}catch(err){fb()}
+    return}
+  if(t.id==="importData"){
+    const raw=$("#dataBox").value.trim();
+    if(!raw){$("#dataMsg").textContent="Paste a backup into the box first.";return}
+    let parsed;try{parsed=JSON.parse(raw);if(!parsed||typeof parsed!=="object"||!parsed.days)throw 0}catch(err){$("#dataMsg").textContent="That text isn't a backup from this app. Copy it again and paste the whole thing.";return}
+    if(!pending.imp){pending.imp=true;keepScroll(render);$("#dataBox").value=raw;setTimeout(()=>{pending.imp=false},5000);return}
+    S=Array.isArray((parsed.settings||{}).meds)?merge(parsed):merge({shop:parsed.shop,days:parsed.days});pending.imp=false;save();keepScroll(render);$("#dataMsg").textContent="Backup restored.";return}
+});
+document.addEventListener("submit",e=>{
+  if(e.target.id!=="logForm")return;e.preventDefault();
+  getDay(dk(viewDate),true).logs.push({id:Date.now(),type:"symptom",t:$("#lf-time").value||hhmm(),hb:+$("#lf-hb").value,regurg:$("#lf-regurg").checked,cough:$("#lf-cough").checked,bloat:$("#lf-bloat").checked,night:$("#lf-night").checked,exer:$("#lf-exer").checked,swallow:$("#lf-swallow").checked,chest:$("#lf-chest").checked,food:$("#lf-food").value.trim(),note:$("#lf-note").value.trim()});
+  save();keepScroll(render);
+});
+document.addEventListener("change",e=>{
+  const t=e.target,s=S.settings;
+  if(t.dataset.shop!==undefined){if(t.checked)S.shop[t.dataset.shop]=true;else delete S.shop[t.dataset.shop];save();keepScroll(render);return}
+  if(t.dataset.medon!==undefined){s.meds[+t.dataset.medon].on=t.checked;save();keepScroll(render);return}
+  if(t.dataset.medtime!==undefined){if(t.value){s.meds[+t.dataset.medtime].time=t.value;save();keepScroll(render)}return}
+  if(t.dataset.time){if(t.value){s[t.dataset.time]=t.value;save();keepScroll(render)}return}
+  if(t.dataset.num){const n=parseInt(t.value,10);if(n>=0&&n<240){s[t.dataset.num]=n;save()}keepScroll(render);return}
+  if(t.id==="ms-antacid"||t.id==="ms-snackOn"||t.id==="ms-walkOn"){s[t.id.slice(3)]=t.checked;save();keepScroll(render);return}
+});
+function keepScroll(fn){const y=window.scrollY;fn();window.scrollTo(0,y)}
+setInterval(()=>{if(tab==="today"&&!(document.activeElement&&document.activeElement.closest&&document.activeElement.closest("form")))renderToday()},60000);
+
+const hs=(location.hash||"").slice(1);
+setTab(TABS.indexOf(hs)>=0?hs:"today");
+
+if("serviceWorker" in navigator&&/^https?:$/.test(location.protocol)&&document.querySelector('link[rel="manifest"]')){navigator.serviceWorker.register("sw.js").catch(()=>{})}
+})();
+</script>
+
+</body>
+</html>
